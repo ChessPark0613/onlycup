@@ -1,0 +1,55 @@
+# =============================
+# 🔧 Build & Gradle
+# =============================
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# =============================
+# 🔧 IDE Settings
+# =============================
+
+## STS / Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+## IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+## NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+## VS Code
+.vscode/
+
+# =============================
+# ⚙️ Environment & Config
+# =============================
+.env
+HELP.md
+
+# =============================
+# 🐳 Docker - DB 관련
+# =============================
+db/
+
+# =============================
+# 🧪 Auto-generated files
+# =============================
+__pycache__/
+*.pyc
+*.sqlite3
