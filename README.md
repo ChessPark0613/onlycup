@@ -1,7 +1,7 @@
 
 
-```markdown
-# 🚀 Project Starter Monorepo
+
+## 🚀 Project Starter Monorepo
 
 Spring Boot + PostgreSQL 환경을 빠르게 구성할 수 있는 스타터 템플릿입니다.  
 Nginx를 리버스 프록시로 설정하고, Docker Compose로 모든 서비스를 통합 실행할 수 있도록 구성되어 있습니다.
