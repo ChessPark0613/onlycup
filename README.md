@@ -50,6 +50,9 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydb
 SPRING_DATASOURCE_USERNAME=myuser
 SPRING_DATASOURCE_PASSWORD=mypassword
 
+# React
+REACT_PORT=5173
+
 # Nginx 외부 포트
 NGINX_PORT=80
 ```
