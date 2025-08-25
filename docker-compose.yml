@@ -10,12 +10,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${PSQL_PORT}:${PSQL_PORT}"
+      - "${PSQL_PORT}:5432"
     volumes:
       - ./db:/var/lib/postgresql/data
 
   app:
-    build: ./server
+    build: ./backend
     container_name: springboot-app
     restart: unless-stopped
     expose:
@@ -30,15 +30,32 @@ services:
     env_file:
       - ./.env
 
+  frontend-dev:
+    image: node:22-alpine
+    container_name: frontend-dev
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${REACT_PORT}:5173"
+    command: >
+      sh -c "corepack enable &&
+             corepack prepare pnpm@10.15.0 --activate &&
+             pnpm install &&
+             pnpm dev --host --port 5173"
+    depends_on:
+      - app
+
   nginx:
     image: nginx:latest
     container_name: nginx-proxy
     restart: unless-stopped
     ports:
-      - "${NGINX_PORT}:${NGINX_PORT}"
+      - "${NGINX_PORT}:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./flutter-web-build:/usr/share/nginx/html  # Flutter 웹 화면 서빙
+      - ./frontend/dist:/usr/share/nginx/html:ro 
     depends_on:
       - app
     env_file:

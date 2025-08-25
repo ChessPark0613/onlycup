@@ -1,120 +1,190 @@
+# onlycup
 
-
+**Spring Boot + PostgreSQL + React(Vite, TS+SWC) + Nginx** 풀스택 스타터.  
+도커 컴포즈로 **개발(HMR)** 과 **배포(정적서빙 + /api 프록시)** 를 모두 지원합니다.
 
 ## 🚀 Project Starter Monorepo
 
-Spring Boot + PostgreSQL 환경을 빠르게 구성할 수 있는 스타터 템플릿입니다.  
-Nginx를 리버스 프록시로 설정하고, Docker Compose로 모든 서비스를 통합 실행할 수 있도록 구성되어 있습니다.
+## 기술 스택
+
+- **Backend**: Java 17, Spring Boot 3, Gradle, JPA, REST API  
+- **DB**: PostgreSQL 15  
+- **Frontend**: React + Vite + TypeScript + SWC, **pnpm 10.15.0**  
+- **Infra**: Nginx(Reverse Proxy), Docker & Docker Compose
 
 ---
 
-## 📦 구성 기술 스택
-
-- **Java 17**, **Spring Boot 3**
-- **PostgreSQL 15**
-- **Nginx (Reverse Proxy)**
-- **Docker & Docker Compose**
-- Gradle, JPA, REST API
-
----
-
-## 📁 프로젝트 구조
-```
-
-project-starter-monorepo/  
-├── .env # 환경 변수 설정 파일  
-├── docker-compose.yml # 전체 서비스 실행 정의  
-├── nginx/  
-│ └── default.conf # Nginx 라우팅 설정  
-├── server/  
-│ ├── Dockerfile # Spring Boot 멀티 스테이지 빌드  
-│ └── ... # src, build.gradle 등  
-└── README.md
+## 프로젝트 구조
 
 ```
+onlycup/
+├─ .env
+├─ docker-compose.yml
+├─ nginx/
+│  └─ default.conf          # Nginx: /api -> app:8080, SPA fallback
+├─ backend/                 # Spring Boot app (내부 8080)
+└─ frontend/                # React(Vite, TS+SWC)
+   ├─ src/ ...
+   ├─ index.html
+   ├─ package.json
+   ├─ pnpm-lock.yaml
+   ├─ vite.config.ts
+   └─ dist/                 # pnpm build 산출물 (배포 시 Nginx가 서빙)
+```
+
 ---
 
-## ⚙️ 실행 방법
+## 환경 변수(.env)
 
-### 1. 환경 변수 설정
-
-`.env` 파일을 루트에 생성하고 다음 내용을 작성하세요:
+레포 루트에 `.env` 파일 생성:
 
 ```env
+# PostgreSQL
 POSTGRES_DB=mydb
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
 PSQL_PORT=5432
 
+# Spring Boot
 SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydb
 SPRING_DATASOURCE_USERNAME=myuser
 SPRING_DATASOURCE_PASSWORD=mypassword
-SPRING_BOOT_PORT=8080
 
+# Nginx 외부 포트
 NGINX_PORT=80
 ```
 
 ---
 
-### 2. 프로젝트 빌드 & 실행
+## 프런트엔드 설정 메모
 
-```bash
-docker compose up --build
+- 루트에 `.npmrc` 파일로 패키지 매니저 버전 고정:
+  
+  ```
+  package-manager=pnpm@10.15.0
+  ```
+
+- `frontend/vite.config.ts` (개발 프록시):
+  
+  ```ts
+  import { defineConfig } from "vite";
+  import react from "@vitejs/plugin-react-swc";
+  
+  export default defineConfig({
+    plugins: [react()],
+    server: {
+      host: true,
+      port: 5173,
+      proxy: { "/api": { target: "http://app:8080", changeOrigin: true } }
+    },
+    build: { outDir: "dist" }
+  });
+  ```
+
+---
+
+## Nginx 라우팅 (nginx/default.conf)
+
+```nginx
+server {
+  listen 80;
+
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # API -> SpringBoot
+  location /api/ {
+    proxy_pass http://app:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # SPA fallback
+  location / {
+    try_files $uri /index.html;
+  }
+}
 ```
 
-- Spring Boot 앱은 내부에서 `8080` 포트로 실행되며
+---
 
-- Nginx가 외부의 `80` 포트로 요청을 받아 `/api/**` 경로를 Spring Boot로 프록시합니다
+## Docker Compose (요약)
+
+**서비스**
+
+- `db`: Postgres 15 (`${PSQL_PORT}:5432`)
+- `app`: Spring Boot (내부 8080, `expose: 8080`)
+- `frontend-dev`: 개발(HMR) 컨테이너 – pnpm 10.15.0, Vite dev server(5173)
+- `nginx`: 배포용 정적 서빙 + /api 프록시 (`${NGINX_PORT}:80`)
+
+> 개발 중에는 `frontend-dev`로 HMR, 배포 시에는 `pnpm build` 산출물(`frontend/dist`)을 Nginx가 서빙.
 
 ---
 
-## 🌐 접속 경로
+## 실행 방법
 
-| 경로        | 설명                       |
-| --------- | ------------------------ |
-| `/api/**` | Spring Boot API          |
-| `/`       | 정적 파일 또는 프런트엔드(추후 연결 가능) |
+### 1) 개발(HMR)
 
-예시:
-
-- `http://localhost/api/hello` → Spring API
-
-- `http://localhost` → Flutter 또는 HTML 정적 페이지 등 대응 가능
-
----
-
-## 🛑 종료 방법
+PC에 Node/pnpm 설치 없이 **컨테이너만** 사용:
 
 ```bash
-docker compose down
+# DB + 백엔드
+docker compose up -d db app
+
+# 프런트(HMR)
+docker compose up -d frontend-dev
+
+# 개발 접속
+# React: http://localhost:5173
+# API:   http://localhost:${NGINX_PORT}/api (또는 Vite 프록시로 /api)
 ```
 
-- 컨테이너 정지 및 종료
+### 2) 배포 빌드 → Nginx 서빙
 
 ```bash
-docker compose down -v
+# 프런트 빌드(컨테이너에서 pnpm 10.15.0 사용)
+docker compose run --rm frontend-dev sh -lc \
+"corepack enable && corepack prepare pnpm@10.15.0 --activate && pnpm install && pnpm build"
+
+# Nginx로 정적파일 서빙 + /api 프록시
+docker compose up -d nginx app db
+
+# 접속
+# http://localhost:${NGINX_PORT}
 ```
 
-- DB 데이터 볼륨까지 완전 초기화
-
----
-
-## 🙌 사용 예시
-
-- 빠른 사내 프로젝트 템플릿
-
-- 백엔드 셋업용
-
-- Spring Boot 연습용 베이스
-
-- 정적 프론트 + API 서버 구성 연동
-
----
-
-## 🧠 브랜치 전략 예시
+### 3) 종료
 
 ```bash
-git checkout -b feat/your-feature-name
-git commit -m "feat: 기능 설명"
-git push origin feat/your-feature-name
+docker compose down         # 컨테이너 정지/삭제
+docker compose down -v      # + 볼륨까지 초기화(DB 데이터 삭제)
+```
+
+---
+
+## API/프론트 라우팅
+
+- `GET /api/**` → Spring Boot  
+- `GET /` 및 SPA 경로(`/*`) → React 정적 파일(`frontend/dist`)  
+
+---
+
+## 트러블슈팅
+
+- **/usr/share/nginx/html 비어있음**: `pnpm build`를 먼저 수행했는지 확인  
+- **CORS 문제**: 프런트는 `/api`만 호출하고, Nginx가 백엔드로 프록시하므로 원칙적으로 CORS 불필요  
+- **Windows 개행 이슈**: Nginx 설정파일은 UTF-8 + LF 권장  
+- **포트 충돌**: `.env`의 `NGINX_PORT`, `PSQL_PORT` 확인
+
+---
+
+## 브랜치 전략(예시)
+
+```bash
+git checkout -b feat/frontend-setup
+git commit -m "feat(frontend): add Vite React (TS+SWC) with dockerized dev/prod"
+git push origin feat/frontend-setup
 ```
