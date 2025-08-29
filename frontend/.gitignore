@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # pnpm store
-frontend/.pnpm-store/
+.pnpm-store
