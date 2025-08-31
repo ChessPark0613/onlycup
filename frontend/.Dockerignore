@@ -1,0 +1,10 @@
+# 불필요한 이미지화 줄여서 빌드 속도, 캐시 효율 증가
+node_modules
+dist
+.pnpm-store
+.git
+.github
+Dockerfile
+*.log
+.vscode
+.env
