@@ -1,5 +1,3 @@
 export default function App() {
-  return (
-    <div className="bg-amber-100 w-screen h-screen">Only Cup</div>
-  )
+  return <div className="h-screen w-screen bg-amber-100">Only Cup</div>;
 }
