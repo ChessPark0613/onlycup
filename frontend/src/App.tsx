@@ -1,5 +1,5 @@
 export default function App() {
   return (
-    <div>Only Cup</div>
+    <div className="bg-amber-100 w-screen h-screen">Only Cup</div>
   )
 }
