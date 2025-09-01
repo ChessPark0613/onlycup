@@ -1,4 +1,4 @@
-# client/Dockerfile
+# frontend/Dockerfile
 
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -22,8 +22,7 @@ RUN pnpm build
 
 
 # Nginx 웹서버에 내 빌드파일 배포
-# 이거 nginx 버전 요거 쓰는거 맞나요?
-FROM nginx:1.27-alpine
+FROM nginx:1.28-alpine
 
 # SPA 라우팅용 커스텀 conf Nginx에 넣기
 # 이걸 넣음으로서 SPA 프로젝트 이용시 어느 엔드포인트를 가도 index.html파일을 제공하도록 할 수 있음
