@@ -53,6 +53,18 @@ db/
 __pycache__/
 *.pyc
 *.sqlite3
+**/node_modules/
+**/.pnpm-store/
+**/.next/
+**/dist/
+**/build/
+**/.turbo/
+**/.cache/
+**/coverage/
+**/pnpm-debug.log*
+**/npm-debug.log*
+.env*
+reset HEAD -- frontend/.pnpm-store.env.example
 
 # =============================
 # frontend gitignores
